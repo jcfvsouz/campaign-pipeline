@@ -5,4 +5,8 @@
     <Project Path="src/Promo.Worker.Infrastructure/Promo.Worker.Infrastructure.csproj" />
     <Project Path="src/Promo.Worker/Promo.Worker.csproj" />
   </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Promo.Worker.Domain.Tests/Promo.Worker.Domain.Tests.csproj" />
+    <Project Path="test/Promo.Worker.Application.Tests/Promo.Worker.Application.Tests.csproj" />
+  </Folder>
 </Solution>

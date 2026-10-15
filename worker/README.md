@@ -15,25 +15,33 @@ worker/
 ├── Promo.Worker.slnx
 ├── Directory.Build.props          # net10.0, nullable/implicit usings — shared by every project below
 ├── nuget.config                   # nuget.org + ../components/nupkgs (this solution consumes those packages)
-└── src/
-    ├── Promo.Worker.Domain/
-    │   ├── Entities/                   # Buyer
-    │   ├── Repositories/               # IBuyerRepository (contract only)
-    │   ├── Email/                      # EmailMessage, IEmailSender (contract only)
-    │   ├── Services/                   # ISendCampaignEmailsService/SendCampaignEmailsService — the business rule
-    │   └── AssemblyInfo.cs             # InternalsVisibleTo("Promo.Worker.Infrastructure") — see Infrastructure below
-    ├── Promo.Worker.Application/
-    │   ├── Events/                     # CampaignPublished — the event's wire contract
-    │   ├── Handlers/                   # CampaignPublishedHandler — orchestration only
-    │   └── ApplicationModule.cs        # IStartup — registers ISendCampaignEmailsService
-    ├── Promo.Worker.Infrastructure/
-    │   ├── Persistence/                # BuyerRow — see below for why it exists
-    │   ├── Repositories/                # BuyerRepository (Dapper)
-    │   ├── Email/                       # SmtpOptions, SmtpEmailSender (MailKit)
-    │   └── InfrastructureModule.cs      # IStartup — registers SQL + repository + SMTP sender
-    └── Promo.Worker/                    # Microsoft.NET.Sdk.Worker — see its own README
-        ├── Program.cs
-        └── appsettings.json
+├── src/
+│   ├── Promo.Worker.Domain/
+│   │   ├── Entities/                   # Buyer
+│   │   ├── Repositories/               # IBuyerRepository (contract only)
+│   │   ├── Email/                      # EmailMessage, IEmailSender (contract only)
+│   │   ├── Services/                   # ISendCampaignEmailsService/SendCampaignEmailsService — the business rule
+│   │   └── AssemblyInfo.cs             # InternalsVisibleTo("Promo.Worker.Infrastructure") — see Infrastructure below
+│   ├── Promo.Worker.Application/
+│   │   ├── Events/                     # CampaignPublished — the event's wire contract
+│   │   ├── Handlers/                   # CampaignPublishedHandler — orchestration only
+│   │   └── ApplicationModule.cs        # IStartup — registers ISendCampaignEmailsService
+│   ├── Promo.Worker.Infrastructure/
+│   │   ├── Persistence/                # BuyerRow — see below for why it exists
+│   │   ├── Repositories/                # BuyerRepository (Dapper)
+│   │   ├── Email/                       # SmtpOptions, SmtpEmailSender (MailKit)
+│   │   └── InfrastructureModule.cs      # IStartup — registers SQL + repository + SMTP sender
+│   └── Promo.Worker/                    # Microsoft.NET.Sdk.Worker — see its own README
+│       ├── Program.cs
+│       └── appsettings.json
+└── test/
+    ├── Promo.Worker.Domain.Tests/
+    │   ├── Builders/                    # BuyerBuilder — Bogus-backed, same convention as api/'s builders
+    │   ├── Fixtures/                     # SendCampaignEmailsServiceFixture
+    │   └── Services/                     # SendCampaignEmailsServiceTests
+    └── Promo.Worker.Application.Tests/
+        ├── Fixtures/                     # CampaignPublishedHandlerFixture
+        └── Handlers/                     # CampaignPublishedHandlerTests
 ```
 
 Every namespace mirrors its folder path 1:1, same convention `api/` and `components/` already use.
@@ -93,4 +101,11 @@ public static explicit operator Buyer(BuyerRow row) =>
 
 ## Tests
 
-Not yet added to this solution — same Moq + `IClassFixture<TFixture>` + `ConfigureMocks()`/`NewInstance()` + `Setup_{Dependency}_{Method}_Result(...)` pattern `api/` and `components/` already use will apply here too (`SendCampaignEmailsService`, `CampaignPublishedHandler`), see the [components root README](../components/README.md#tests) for the full rationale.
+```bash
+cd worker
+dotnet test Promo.Worker.slnx
+```
+
+`Promo.Worker.Domain.Tests` and `Promo.Worker.Application.Tests` follow the same Moq + `IClassFixture<TFixture>` + `ConfigureMocks()`/`NewInstance()` + `Setup_{Dependency}_{Method}_Result(...)` pattern `api/` and `components/` already use, with a Bogus-backed `BuyerBuilder` for test data — see the [components root README](../components/README.md#tests) for the full rationale.
+
+No `Promo.Worker.Infrastructure.Tests` — same reasoning `api/README.md` gives for its own repositories: a single direct Dapper call and an SMTP call have no logic worth isolating from the real DB/SMTP server; correctness there is proven by actually running the host (see [the host's README](src/Promo.Worker/README.md#verified-by-actually-running-it)).

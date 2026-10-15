@@ -62,7 +62,7 @@ portfolio-campaign-pipeline/
 | `components/` — xUnit tests (builders + fixtures) | ✅ done |
 | `components/` — sample console apps per package | ✅ done |
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
-| `worker/` — queue consumer, batch e-mail dispatch | 🔧 in progress — `src/` built and wiring-verified, tests pending |
+| `worker/` — queue consumer, batch e-mail dispatch, xUnit tests | ✅ done |
 | `docker/` — compose file for all 5 containers | ⏳ planned |
 | `k8s/` — manifests for a local cluster | ⏳ planned |
 
