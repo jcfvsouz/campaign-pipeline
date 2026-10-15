@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Portfolio.Components.Messaging.RabbitMQ" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Promo.Worker.Application\Promo.Worker.Application.csproj" />
+    <ProjectReference Include="..\Promo.Worker.Infrastructure\Promo.Worker.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
