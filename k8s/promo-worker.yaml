@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promo-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promo-worker
+  template:
+    metadata:
+      labels:
+        app: promo-worker
+    spec:
+      containers:
+        - name: promo-worker
+          image: promo-worker:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ConnectionStrings__SqlServer
+              value: "Server=sqlserver,1433;Database=CampaignPipeline;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+            - name: RabbitMq__Host
+              value: "rabbitmq"
+            - name: Smtp__Host
+              value: "mailhog"

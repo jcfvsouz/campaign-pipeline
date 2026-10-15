@@ -49,7 +49,7 @@ portfolio-campaign-pipeline/
 ├── api/             # Promo.Api — Clean Architecture, publishes CampaignPublished — see api/README.md
 ├── worker/           # Promo.Worker — consumes the queue, sends batch e-mail via Mailhog — see worker/README.md
 ├── docker/           # docker-compose.yml wiring API + Worker + RabbitMQ + SQL Server + Mailhog
-└── k8s/              # Deployment/Service manifests for a local cluster                       [planned]
+└── k8s/              # Deployment/Service manifests for a local cluster — see k8s/README.md
 ```
 
 ## Status
@@ -64,7 +64,7 @@ portfolio-campaign-pipeline/
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
 | `worker/` — queue consumer, batch e-mail dispatch, xUnit tests | ✅ done |
 | `docker/` — compose file for all 5 containers | 🔧 written, not yet verified end to end |
-| `k8s/` — manifests for a local cluster | ⏳ planned |
+| `k8s/` — manifests for a local cluster | 🔧 written, not yet verified end to end |
 
 ## Running everything with Docker
 
@@ -92,6 +92,10 @@ curl -X POST http://localhost:8080/campaigns/<id-from-above>/publish -H "Authori
 ```
 
 Publishing should land three e-mails in Mailhog — one per buyer in the VIP Customers group seeded by `seed.sql` — within a few seconds.
+
+## Running everything with Kubernetes
+
+Same five containers, same images, on a local `kind`/`minikube` cluster instead — see [`k8s/README.md`](k8s/README.md) for the full walkthrough (building/loading images, `kubectl apply -k k8s/`, port-forwarding, and why a Kubernetes `Job`/`Deployment` need dependency-ordering handled differently than Docker Compose's `depends_on`).
 
 ## Tech stack
 
