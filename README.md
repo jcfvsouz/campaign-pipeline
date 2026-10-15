@@ -47,7 +47,7 @@ Everything above the "SMTP" arrow runs as its own container; `docker-compose` wi
 portfolio-campaign-pipeline/
 ├── components/     # Shared class libraries, packed as local NuGet packages — see components/README.md
 ├── api/             # Promo.Api — Clean Architecture, publishes CampaignPublished — see api/README.md
-├── worker/           # Promo.Worker — consumes the queue, sends batch e-mail via Mailhog     [planned]
+├── worker/           # Promo.Worker — consumes the queue, sends batch e-mail via Mailhog — see worker/README.md
 ├── docker/           # docker-compose.yml wiring API + Worker + RabbitMQ + SQL Server + Mailhog [planned]
 └── k8s/              # Deployment/Service manifests for a local cluster                       [planned]
 ```
@@ -62,7 +62,7 @@ portfolio-campaign-pipeline/
 | `components/` — xUnit tests (builders + fixtures) | ✅ done |
 | `components/` — sample console apps per package | ✅ done |
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
-| `worker/` — queue consumer, batch e-mail dispatch | ⏳ next |
+| `worker/` — queue consumer, batch e-mail dispatch | 🔧 in progress — `src/` built and wiring-verified, tests pending |
 | `docker/` — compose file for all 5 containers | ⏳ planned |
 | `k8s/` — manifests for a local cluster | ⏳ planned |
 

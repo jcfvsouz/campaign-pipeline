@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Portfolio.Components.Hosting" Version="1.0.0" />
+    <PackageReference Include="Portfolio.Components.Messaging" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Promo.Worker.Domain\Promo.Worker.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

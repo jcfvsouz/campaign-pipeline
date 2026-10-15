@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Portfolio.Components.SQLServerRepository" Version="1.0.0" />
+    <PackageReference Include="Portfolio.Components.Hosting" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+    <PackageReference Include="MailKit" Version="4.16.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Promo.Worker.Domain\Promo.Worker.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
