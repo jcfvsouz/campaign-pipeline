@@ -54,6 +54,7 @@ services:
     build:
       context: ..
       dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -69,6 +70,7 @@ services:
     build:
       context: ..
       dockerfile: docker/worker.Dockerfile
+    restart: unless-stopped
     depends_on:
       db-init:
         condition: service_completed_successfully

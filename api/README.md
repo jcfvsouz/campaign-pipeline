@@ -14,7 +14,7 @@ api/
 ├── Directory.Build.props          # net10.0, nullable/implicit usings — shared by every project below
 ├── nuget.config                   # nuget.org + ../components/nupkgs (this solution consumes those packages)
 ├── database/
-│   ├── schema.sql                 # creates Tenants/BuyerGroups/Buyers/Campaigns
+│   ├── schema.sql                 # creates the CampaignPipeline database (if missing) and Tenants/BuyerGroups/Buyers/Campaigns
 │   └── seed.sql                   # 1 tenant, 2 buyer groups, 5 buyers — fixed GUIDs, referenced below
 ├── src/
 │   ├── Promo.Api.Domain/

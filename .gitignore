@@ -36,3 +36,6 @@ Thumbs.db
 ## Environment / secrets — never commit real connection strings or credentials
 *.env
 appsettings.*.local.json
+
+## Machine-specific docker-compose overrides (e.g. remapping a port already taken on your host)
+docker/docker-compose.override.yml
