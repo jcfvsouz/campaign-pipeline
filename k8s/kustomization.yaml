@@ -5,9 +5,3 @@ resources:
   - db-init-job.yaml
   - promo-api.yaml
   - promo-worker.yaml
-
-configMapGenerator:
-  - name: db-init-scripts
-    files:
-      - schema.sql=../api/database/schema.sql
-      - seed.sql=../api/database/seed.sql
