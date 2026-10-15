@@ -48,7 +48,7 @@ portfolio-campaign-pipeline/
 ├── components/     # Shared class libraries, packed as local NuGet packages — see components/README.md
 ├── api/             # Promo.Api — Clean Architecture, publishes CampaignPublished — see api/README.md
 ├── worker/           # Promo.Worker — consumes the queue, sends batch e-mail via Mailhog — see worker/README.md
-├── docker/           # docker-compose.yml wiring API + Worker + RabbitMQ + SQL Server + Mailhog [planned]
+├── docker/           # docker-compose.yml wiring API + Worker + RabbitMQ + SQL Server + Mailhog
 └── k8s/              # Deployment/Service manifests for a local cluster                       [planned]
 ```
 
@@ -63,8 +63,35 @@ portfolio-campaign-pipeline/
 | `components/` — sample console apps per package | ✅ done |
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
 | `worker/` — queue consumer, batch e-mail dispatch, xUnit tests | ✅ done |
-| `docker/` — compose file for all 5 containers | ⏳ planned |
+| `docker/` — compose file for all 5 containers | 🔧 written, not yet verified end to end |
 | `k8s/` — manifests for a local cluster | ⏳ planned |
+
+## Running everything with Docker
+
+```bash
+cd docker
+docker compose up --build
+```
+
+This builds `Promo.Api`/`Promo.Worker` from the repository root (each Dockerfile builds `components/` first to populate the local NuGet feed, then publishes its own service against it) and brings up all five containers: SQL Server, RabbitMQ, Mailhog, the API, and the Worker. A one-shot `db-init` container runs `api/database/schema.sql` then `seed.sql` against SQL Server before the API/Worker start — safe to ignore its errors on a second `up` against an existing volume (the schema/seed already exist); run `docker compose down -v` first for a clean slate.
+
+Once everything is healthy:
+
+- API: `http://localhost:8080/swagger`
+- RabbitMQ management UI: `http://localhost:15672` (`guest`/`guest`)
+- Mailhog UI (every e-mail the Worker sent): `http://localhost:8025`
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/token -H "Content-Type: application/json" -d '{"username":"julio"}' | jq -r .token)
+
+curl -X POST http://localhost:8080/campaigns \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Black Friday","buyerGroupId":"22222222-2222-2222-2222-222222222222"}'
+
+curl -X POST http://localhost:8080/campaigns/<id-from-above>/publish -H "Authorization: Bearer $TOKEN"
+```
+
+Publishing should land three e-mails in Mailhog — one per buyer in the VIP Customers group seeded by `seed.sql` — within a few seconds.
 
 ## Tech stack
 
