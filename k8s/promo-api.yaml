@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promo-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promo-api
+  template:
+    metadata:
+      labels:
+        app: promo-api
+    spec:
+      containers:
+        - name: promo-api
+          image: promo-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__SqlServer
+              value: "Server=sqlserver,1433;Database=CampaignPipeline;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+            - name: RabbitMq__Host
+              value: "rabbitmq"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promo-api
+spec:
+  selector:
+    app: promo-api
+  ports:
+    - port: 8080
+      targetPort: 8080

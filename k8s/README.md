@@ -1,0 +1,90 @@
+# k8s/
+
+Runs the same five-container pipeline from [the root README](../README.md) on a local Kubernetes cluster (`kind` or `minikube`) instead of `docker-compose`. Same containers, same images (the `docker/` Dockerfiles are reused as-is) — what changes is how Kubernetes expects dependencies, config, and startup ordering to be expressed.
+
+## How this differs from `docker-compose.yml`
+
+Docker Compose's `depends_on: condition: service_healthy` has no direct Kubernetes equivalent — there's no built-in way to say "don't start resource B until resource A's healthcheck passes." Each manifest here replicates that a different way, on purpose, to show both patterns:
+
+- **`db-init` (a `Job`)** — a Job that fails is just *failed*, not retried forever, so it genuinely needs to wait. Its `initContainer` polls `sqlcmd` against `sqlserver` in a loop before the main container runs `schema.sql`/`seed.sql`. Without this, the Job could race SQL Server's own startup and silently do nothing (its `; exit 0` — there to make reruns against an existing `PersistentVolumeClaim` non-blocking — would swallow that failure too).
+- **`promo-api`/`promo-worker` (`Deployment`s)** — no wait logic at all. Both processes already crash with an unhandled exception if SQL Server/RabbitMQ aren't reachable (confirmed by running them locally with no infra up), and a Deployment's pods restart indefinitely by default. So dependency ordering here is just "let it crash, Kubernetes retries" — expect `CrashLoopBackOff` in `kubectl get pods` for a bit after the first `apply`; that's expected, not a bug, while `sqlserver`/`rabbitmq` finish starting.
+
+`db-init-job.yaml` doesn't embed `schema.sql`/`seed.sql` content — `kustomization.yaml`'s `configMapGenerator` reads those files directly from `api/database/` at apply time, so there's one source of truth for the schema, same file the Docker Compose `db-init` container bind-mounts.
+
+## Prerequisites
+
+- `kubectl`
+- A local cluster: [`kind`](https://kind.sigs.k8s.io/) or `minikube`
+- Docker, to build the images (same `docker/api.Dockerfile`/`docker/worker.Dockerfile` as `docker-compose.yml`)
+
+## Running it
+
+Build the images from the repository root (same Dockerfiles, same build context as `docker-compose.yml` uses):
+
+```bash
+docker build -f docker/api.Dockerfile -t promo-api:local .
+docker build -f docker/worker.Dockerfile -t promo-worker:local .
+```
+
+There's no registry for a local cluster to pull these from, so they need to be loaded into the cluster's own container runtime directly:
+
+```bash
+# kind
+kind load docker-image promo-api:local
+kind load docker-image promo-worker:local
+
+# minikube
+minikube image load promo-api:local
+minikube image load promo-worker:local
+```
+
+Apply everything:
+
+```bash
+kubectl apply -k k8s/
+```
+
+Watch it converge (`sqlserver`/`rabbitmq` take a bit to become ready; `promo-api`/`promo-worker` will show `CrashLoopBackOff` until they do, then settle to `Running`):
+
+```bash
+kubectl get pods -w
+```
+
+`db-init` is a `Job`, not a long-running pod — `kubectl get jobs` should show it `Complete` once `schema.sql`/`seed.sql` have run.
+
+## Reaching it
+
+None of this is exposed outside the cluster by default — `kubectl port-forward` reaches each service the same way the Docker Compose README exposes ports on `localhost`:
+
+```bash
+kubectl port-forward service/promo-api 8080:8080
+kubectl port-forward service/rabbitmq 15672:15672
+kubectl port-forward service/mailhog 8025:8025
+```
+
+With those running (each in its own terminal, or backgrounded), the exact same walkthrough from [the root README](../README.md#running-everything-with-docker) applies — same URLs, same curl commands, same expected three e-mails in Mailhog.
+
+## Resetting
+
+`db-init`'s `Job` object is immutable once created — if `schema.sql`/`seed.sql` change, `kubectl apply -k k8s/` will fail to update it in place. Delete it first:
+
+```bash
+kubectl delete job db-init
+```
+
+To tear the whole thing down, including the SQL Server data volume:
+
+```bash
+kubectl delete -k k8s/
+kubectl delete pvc sqlserver-data
+```
+
+## Known simplifications
+
+- `sqlserver` is a `Deployment` with a `ReadWriteOnce` `PersistentVolumeClaim`, not a `StatefulSet` — fine for a single-node local cluster (`kind`/`minikube` are single-node), not how a real multi-node deployment would run SQL Server.
+- The SA password lives in a `Secret`, but `promo-api`/`promo-worker`'s `ConnectionStrings__SqlServer` still has it typed out literally (Kubernetes has no native way to compose one env var's string from another's value) — same dev-only placeholder already committed in `api/`'s and `worker/`'s `appsettings.json`, not a real secret.
+- No `Namespace` — everything lands in `default`, matching Docker Compose's single flat network. A real deployment would isolate this into its own namespace.
+
+## Status
+
+Written, not yet run against a real cluster — no `kubectl`/`kind`/`minikube`/Docker available in this environment. Every manifest parses as valid YAML; the next real test is `kubectl apply -k k8s/` against an actual cluster.
