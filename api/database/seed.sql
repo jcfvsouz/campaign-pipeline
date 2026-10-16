@@ -2,6 +2,9 @@
 -- Fixed GUIDs on purpose: the README/samples reference these BuyerGroupIds directly when
 -- demonstrating POST /campaigns, so a fresh database always has the same two groups to target.
 
+USE CampaignPipeline;
+GO
+
 INSERT INTO Tenants (Id, Name)
 VALUES ('11111111-1111-1111-1111-111111111111', 'Acme Retail');
 

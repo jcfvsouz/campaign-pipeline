@@ -1,6 +1,13 @@
 -- Campaign Publication & Batch Email Dispatch - schema
--- Run once against the target database (see ../../README.md - the docker/ SQL Server
--- container isn't wired up yet, so this runs manually until then).
+
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'CampaignPipeline')
+BEGIN
+    CREATE DATABASE CampaignPipeline;
+END
+GO
+
+USE CampaignPipeline;
+GO
 
 CREATE TABLE Tenants (
     Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,

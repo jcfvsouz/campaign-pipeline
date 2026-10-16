@@ -63,8 +63,8 @@ portfolio-campaign-pipeline/
 | `components/` — sample console apps per package | ✅ done |
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
 | `worker/` — queue consumer, batch e-mail dispatch, xUnit tests | ✅ done |
-| `docker/` — compose file for all 5 containers | 🔧 written, not yet verified end to end |
-| `k8s/` — manifests for a local cluster | 🔧 written, not yet verified end to end |
+| `docker/` — compose file for all 5 containers | ✅ done — verified end to end (publish → e-mail in Mailhog) |
+| `k8s/` — manifests for a local cluster | ✅ done — verified end to end on a real `kind` cluster (publish → e-mail in Mailhog) |
 
 ## Running everything with Docker
 
@@ -73,7 +73,7 @@ cd docker
 docker compose up --build
 ```
 
-This builds `Promo.Api`/`Promo.Worker` from the repository root (each Dockerfile builds `components/` first to populate the local NuGet feed, then publishes its own service against it) and brings up all five containers: SQL Server, RabbitMQ, Mailhog, the API, and the Worker. A one-shot `db-init` container runs `api/database/schema.sql` then `seed.sql` against SQL Server before the API/Worker start — safe to ignore its errors on a second `up` against an existing volume (the schema/seed already exist); run `docker compose down -v` first for a clean slate.
+This builds `Promo.Api`/`Promo.Worker` from the repository root (each Dockerfile builds `components/` first to populate the local NuGet feed, then publishes its own service against it) and brings up all five containers: SQL Server, RabbitMQ, Mailhog, the API, and the Worker. A one-shot `db-init` container creates the `CampaignPipeline` database (if missing) and runs `api/database/schema.sql` then `seed.sql` against it before the API/Worker start — safe to ignore its errors on a second `up` against an existing volume (the schema/seed already exist); run `docker compose down -v` first for a clean slate. `promo-api`/`promo-worker` both run with `restart: unless-stopped`, so a transient dependency hiccup at startup (RabbitMQ reporting healthy a moment before its AMQP listener is actually ready, for instance) gets retried automatically instead of leaving the container dead.
 
 Once everything is healthy:
 
@@ -92,6 +92,10 @@ curl -X POST http://localhost:8080/campaigns/<id-from-above>/publish -H "Authori
 ```
 
 Publishing should land three e-mails in Mailhog — one per buyer in the VIP Customers group seeded by `seed.sql` — within a few seconds.
+
+### Verified by actually running it
+
+`docker compose up --build` against a real Docker Desktop install: all five containers reach a healthy/running state, `db-init` completes successfully, and the curl walkthrough above produced exactly three e-mails in Mailhog (`ana.souza@example.com`, `bruno.lima@example.com`, `carla.mendes@example.com`) with the subject `New campaign: Black Friday` — `Promo.Worker`'s own log confirms it: `Dispatched campaign Black Friday (<id>) to 3 buyers.`
 
 ## Running everything with Kubernetes
 
