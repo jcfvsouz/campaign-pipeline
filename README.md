@@ -64,7 +64,7 @@ portfolio-campaign-pipeline/
 | `api/` — Clean Architecture (Domain/Application/Infrastructure), create + publish campaign endpoints | ✅ done |
 | `worker/` — queue consumer, batch e-mail dispatch, xUnit tests | ✅ done |
 | `docker/` — compose file for all 5 containers | ✅ done — verified end to end (publish → e-mail in Mailhog) |
-| `k8s/` — manifests for a local cluster | 🔧 applies cleanly on a real `kind` cluster; full healthy convergence not yet confirmed (see `k8s/README.md`) |
+| `k8s/` — manifests for a local cluster | ✅ done — verified end to end on a real `kind` cluster (publish → e-mail in Mailhog) |
 
 ## Running everything with Docker
 

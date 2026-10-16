@@ -23,6 +23,8 @@ metadata:
   name: sqlserver
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: sqlserver
@@ -42,6 +44,13 @@ spec:
                 secretKeyRef:
                   name: sqlserver-credentials
                   key: sa-password
+            - name: MSSQL_MEMORY_LIMIT_MB
+              value: "1024"
+          resources:
+            requests:
+              memory: 1Gi
+            limits:
+              memory: 1536Mi
           ports:
             - containerPort: 1433
           volumeMounts:
@@ -49,10 +58,11 @@ spec:
               mountPath: /var/opt/mssql
           readinessProbe:
             exec:
-              command: ["/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "$(MSSQL_SA_PASSWORD)", "-C", "-Q", "SELECT 1"]
+              command: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1'"]
             initialDelaySeconds: 15
             periodSeconds: 10
-            failureThreshold: 10
+            timeoutSeconds: 10
+            failureThreshold: 30
       volumes:
         - name: data
           persistentVolumeClaim:

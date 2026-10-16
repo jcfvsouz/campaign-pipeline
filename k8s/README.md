@@ -96,4 +96,12 @@ kubectl delete configmap db-init-scripts
 
 Validated against a real `kind` cluster: cluster creation, image loading, the `db-init-scripts` ConfigMap step, and `kubectl apply -k k8s/` all succeed — every resource (Secret, PVC, Deployments, Services, the Job) gets created without error, and `promo-api`/`promo-worker` do crash-loop as expected until their dependencies are ready, confirming the self-healing design works.
 
-Not yet confirmed: a full healthy convergence (`sqlserver` reaching `Ready`, `db-init` reaching `Complete`, a real publish → e-mail round trip) on an 8GB host. Running `kind`'s own Kubernetes control plane (etcd, kube-apiserver, kube-scheduler, kube-controller-manager, CoreDNS, kube-proxy — all inside the one node container) *in addition to* SQL Server, RabbitMQ, and the two .NET apps pushed that machine into sustained memory thrashing (even `kubectl logs`/`kubectl get` calls started timing out) well past what `docker compose` alone needed for the same five containers. If you hit the same thing: free as much RAM as you can before `kind create cluster`, and expect this to need meaningfully more headroom than the Docker Compose path.
+Full healthy convergence also confirmed on an 8GB host (Docker Desktop VM capped at ~3.8GB): every pod reaches `Running`/`Ready` within ~4 minutes, `db-init` reaches `Complete`, and the publish walkthrough lands exactly three e-mails in Mailhog (`Dispatched campaign ... to 3 buyers.` in `promo-worker`'s log). The whole node container settles around 2.3GB.
+
+Getting there took three fixes to `sqlserver.yaml`, all visible in it now:
+
+- **`MSSQL_MEMORY_LIMIT_MB` + a memory `limit`** — by default SQL Server sizes itself off the *host's* memory, not the container's, and grabs most of it. Next to `kind`'s own control plane that pushed an 8GB machine into memory thrashing (even `kubectl get` timed out). Capping it at 1GB is plenty for this dataset.
+- **`timeoutSeconds` on the readiness probe** — the default is 1s, and `sqlcmd` on a loaded single-node cluster routinely takes longer, so the pod never turned `Ready` even with SQL Server up.
+- **`strategy: Recreate`** — with the default `RollingUpdate`, changing the Deployment starts the new pod *before* the old one stops; both mount the same `ReadWriteOnce` volume (single node, so Kubernetes allows it) and two SQL Server instances end up fighting over the same data files. Recreate stops the old pod first.
+
+One more pitfall hit along the way: an `exec` probe does **not** expand `$(VAR)` references (only `command`/`args` of a container do), so the password has to go through `/bin/bash -c "...\"$VAR\""` — otherwise sqlcmd gets the literal string `$(MSSQL_SA_PASSWORD)` and the probe fails with `Login failed for user 'sa'`.
